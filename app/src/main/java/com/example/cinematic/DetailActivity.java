@@ -2,33 +2,28 @@ package com.example.cinematic;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Handler;
-import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.example.cinematic.Adapters.MovieAdapter;
+import com.example.cinematic.Adapters.TrailerAdapter;
+import com.example.cinematic.Async.DownloadImage;
+import com.example.cinematic.Async.DownloadJSON;
+import com.example.cinematic.Classes.Movies;
+import com.example.cinematic.Classes.Trailers;
 import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
@@ -36,109 +31,21 @@ import com.google.android.material.tabs.TabLayout;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
 
 public class DetailActivity extends AppCompatActivity {
 
     ProgressDialog progressDialog;
     TextView textMovieName, textDate, textRuntime, textRating, textStatus, textOverview, textCast;
     ListView trailerListView;
+    GridView similarGridView;
     ImageView imageMovie;
     String ID, Type, castData = "";
     TrailerAdapter adapter;
+    MovieAdapter movieAdapter;
+    ArrayList<Movies> moviesArrayList;
     ArrayList<Trailers> trailerArrayList;
-    boolean requestCast = true;
-
-
-    public class DownloadJSON extends AsyncTask<String, Void, String>
-    {
-        protected String doInBackground(String... urls) {
-            String jsonResult = "";
-            URL url;
-            HttpURLConnection urlConnection = null;
-
-            try {
-                url = new URL(urls[0]);
-                urlConnection = (HttpURLConnection) url.openConnection();
-                InputStream inputStream = urlConnection.getInputStream();
-                InputStreamReader streamReader = new InputStreamReader(inputStream);
-                int data = streamReader.read();
-
-                while(data != -1)
-                {
-                    char currentChar = (char) data;
-                    jsonResult += currentChar ;
-                    data = streamReader.read();
-                }
-                return  jsonResult;
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-    }
-
-
-
-
-
-
-    public class DownloadImage extends AsyncTask<String, Void, Bitmap>
-    {
-
-        @Override
-        protected Bitmap doInBackground(String... urls) {
-            URL url;
-            HttpURLConnection urlConnection = null;
-
-            try {
-                url = new URL(urls[0]);
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.connect();
-
-                InputStream inputStream = urlConnection.getInputStream();
-                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-                return bitmap;
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-    }
-
-
-
-
-
-
-    class TrailerAdapter extends ArrayAdapter<Trailers>
-    {
-        public TrailerAdapter(Context context, ArrayList<Trailers> trailerArrayList)
-        {
-            super(context, 0, trailerArrayList);
-        }
-
-        @NonNull
-        @Override
-        public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-
-            @SuppressLint("ViewHolder") View view = LayoutInflater.from(getContext()).inflate(R.layout.layout_trailer_adapter, parent, false);
-
-            Trailers trailer = getItem(position);
-
-            TextView textLink = view.findViewById(R.id.textLink);
-            textLink.setText(trailer.getTrailerTitle());
-
-            return view;
-        }
-    }
+    boolean requestCast = true, requestSimilar = true;
 
 
 
@@ -161,9 +68,12 @@ public class DetailActivity extends AppCompatActivity {
             fetchURL = "https://api.themoviedb.org/3/tv/"+ ID +"?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US";
 
 
+        moviesArrayList = new ArrayList<>();
+        similarGridView = findViewById(R.id.similarGridView);
         trailerListView = findViewById(R.id.trailerListView);
         trailerArrayList = new ArrayList<>();
         adapter = new TrailerAdapter(DetailActivity.this, trailerArrayList);
+        movieAdapter = new MovieAdapter(DetailActivity.this, moviesArrayList);
 
         textMovieName = findViewById(R.id.textMovieName);
         textDate = findViewById(R.id.textDate);
@@ -200,6 +110,7 @@ public class DetailActivity extends AppCompatActivity {
                     textOverview.setVisibility(View.VISIBLE);
                     trailerListView.setVisibility(View.GONE);
                     textCast.setVisibility(View.GONE);
+                    similarGridView.setVisibility(View.GONE);
                 }
 
                 else if (tab.getText().equals("TRAILERS"))
@@ -207,6 +118,7 @@ public class DetailActivity extends AppCompatActivity {
                     textOverview.setVisibility(View.GONE);
                     trailerListView.setVisibility(View.VISIBLE);
                     textCast.setVisibility(View.GONE);
+                    similarGridView.setVisibility(View.GONE);
                 }
 
                 else if(tab.getText().equals("CAST"))
@@ -249,6 +161,50 @@ public class DetailActivity extends AppCompatActivity {
                     }
 
                     textCast.setVisibility(View.VISIBLE);
+                    similarGridView.setVisibility(View.GONE);
+                }
+
+                else
+                {
+                    textOverview.setVisibility(View.GONE);
+                    trailerListView.setVisibility(View.GONE);
+
+                    if(requestSimilar == true) {
+
+                        progressDialog.show();
+                        Handler handler = new Handler();
+                        handler.postDelayed(new Runnable() {
+                            public void run() {
+
+                                try {
+
+                                    DownloadJSON downloadSimilarJSON = new DownloadJSON();
+                                    String data;
+
+                                    if (Type.equals("MOVIE")) {
+
+                                        data = downloadSimilarJSON.execute("https://api.themoviedb.org/3/movie/"+ ID +"/similar?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&page=1").get();
+                                        getSimilarData(data);
+                                    }
+
+                                    else {
+
+                                        data = downloadSimilarJSON.execute("https://api.themoviedb.org/3/tv/"+ ID +"/similar?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&page=1").get();
+                                        getSimilarData(data);
+                                    }
+                                    requestSimilar = false;
+
+                                }
+                                catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+
+                            }
+                        }, 500);
+                    }
+
+                    textCast.setVisibility(View.GONE);
+                    similarGridView.setVisibility(View.VISIBLE);
                 }
             }
 
@@ -429,4 +385,68 @@ public class DetailActivity extends AppCompatActivity {
         }
     }
 
+
+
+
+
+    protected void getSimilarData(String s)
+    {
+        try {
+            JSONObject jsonObject = new JSONObject(s);
+
+            String info = jsonObject.getString("results");
+
+            JSONArray jsonArray = new JSONArray(info);
+
+            moviesArrayList.clear();
+
+            for(int i = 0; i < jsonArray.length(); i++)
+            {
+                JSONObject object = jsonArray.getJSONObject(i);
+
+                if (Type.equals("MOVIE"))
+                    moviesArrayList.add(new Movies(
+                            object.getString("poster_path"),
+                            object.getString("title"),
+                            object.getString("id")
+                    ));
+
+                else
+                    moviesArrayList.add(new Movies(
+                            object.getString("poster_path"),
+                            object.getString("name"),
+                            object.getString("id")
+                    ));
+            }
+
+            similarGridView.setAdapter(movieAdapter);
+
+            progressDialog.hide();
+
+            similarGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                    String ID = moviesArrayList.get(position).getId();
+                    Intent intent = new Intent(DetailActivity.this, DetailActivity.class);
+
+                    if(Type.equals("MOVIE"))
+                        intent.putExtra("TYPE", "MOVIE");
+
+                    else
+                        intent.putExtra("TYPE", "TV");
+
+                    intent.putExtra("ID", ID);
+                    startActivity(intent);
+                    finish();
+
+                }
+            });
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            progressDialog.hide();
+            Snackbar.make(findViewById(R.id.drawerLayout), "UNABLE TO FETCH INFORMATION", BaseTransientBottomBar.LENGTH_SHORT).show();
+        }
+    }
 }

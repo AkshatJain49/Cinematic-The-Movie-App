@@ -1,4 +1,4 @@
-package com.example.cinematic;
+package com.example.cinematic.Classes;
 
 public class Trailers {
     String trailerTitle;

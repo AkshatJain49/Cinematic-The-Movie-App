@@ -1,7 +1,6 @@
 package com.example.cinematic;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -15,20 +14,17 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridView;
-import android.widget.ImageView;
-import android.widget.TextView;
 
+import com.example.cinematic.Adapters.MovieAdapter;
+import com.example.cinematic.Async.DownloadJSON;
+import com.example.cinematic.Classes.Movies;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
@@ -42,6 +38,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 
 public class ShowsActivity extends AppCompatActivity {
 
@@ -53,154 +50,6 @@ public class ShowsActivity extends AppCompatActivity {
     ArrayList<Movies> moviesArrayList;
     MovieAdapter adapter;
     GridView moviesListView;
-
-
-
-
-
-    public class DownloadJSON extends AsyncTask<String, Void, String>
-    {
-        protected String doInBackground(String... urls) {
-            String jsonResult = "";
-            URL url;
-            HttpURLConnection urlConnection = null;
-
-            try {
-                url = new URL(urls[0]);
-                urlConnection = (HttpURLConnection) url.openConnection();
-                InputStream inputStream = urlConnection.getInputStream();
-                InputStreamReader streamReader = new InputStreamReader(inputStream);
-                int data = streamReader.read();
-
-                while(data != -1)
-                {
-                    char currentChar = (char) data;
-                    jsonResult += currentChar ;
-                    data = streamReader.read();
-                }
-                return  jsonResult;
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-
-            try {
-                JSONObject jsonObject = new JSONObject(s);
-
-                String info = jsonObject.getString("results");
-
-                JSONArray jsonArray = new JSONArray(info);
-
-                moviesArrayList.clear();
-
-                for(int i = 0; i < jsonArray.length(); i++)
-                {
-                    JSONObject object = jsonArray.getJSONObject(i);
-                    moviesArrayList.add(new Movies(
-                            object.getString("poster_path"),
-                            object.getString("name"),
-                            object.getString("id")
-                    ));
-                }
-
-                moviesListView.setAdapter(adapter);
-
-                progressDialog.hide();
-
-                moviesListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
-                        String ID = moviesArrayList.get(position).getId();
-                        Intent intent = new Intent(ShowsActivity.this, DetailActivity.class);
-                        intent.putExtra("TYPE", "TV");
-                        intent.putExtra("ID", ID);
-                        startActivity(intent);
-
-                    }
-                });
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                progressDialog.hide();
-                Snackbar.make(findViewById(R.id.drawerLayout), "UNABLE TO FETCH INFORMATION", BaseTransientBottomBar.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-
-
-
-
-    public class DownloadImage extends AsyncTask<String, Void, Bitmap>
-    {
-
-        @Override
-        protected Bitmap doInBackground(String... urls) {
-            URL url;
-            HttpURLConnection urlConnection = null;
-
-            try {
-                url = new URL(urls[0]);
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.connect();
-
-                InputStream inputStream = urlConnection.getInputStream();
-                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-                return bitmap;
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-    }
-
-
-
-
-
-    //CUSTOM ADAPTER
-    class MovieAdapter extends ArrayAdapter<Movies>
-    {
-        public MovieAdapter(Context context, ArrayList<Movies> moviesArrayList)
-        {
-            super(context, 0, moviesArrayList);
-        }
-
-        @NonNull
-        @Override
-        public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-
-            View view = LayoutInflater.from(getContext()).inflate(R.layout.layout_adapter, parent, false);
-
-            ImageView imageMovie = view.findViewById(R.id.imageMovie);
-            TextView textName = view.findViewById(R.id.textName);
-
-            Movies movie = getItem(position);
-
-            textName.setText(movie.getMovieName());
-
-            String posterURL = "https://image.tmdb.org/t/p/w500/" + movie.getPosterURL();
-
-            DownloadImage image = new DownloadImage();
-
-            try {
-                Bitmap bitmap = image.execute(posterURL).get();
-                imageMovie.setImageBitmap(bitmap);
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
-            return view;
-        }
-    }
 
 
 
@@ -229,8 +78,23 @@ public class ShowsActivity extends AppCompatActivity {
         adapter = new MovieAdapter(ShowsActivity.this, moviesArrayList);
         moviesListView = findViewById(R.id.moviesGridView);
 
-        DownloadJSON downloadJSON = new DownloadJSON();
-        downloadJSON.execute("https://api.themoviedb.org/3/tv/popular?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&page=1");
+
+        // HANDLER IS USED TO MAKE TRANSITION SMOOTH
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+                    DownloadJSON downloadJSON = new DownloadJSON();
+                    String data = downloadJSON.execute("https://api.themoviedb.org/3/tv/popular?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&page=1").get();
+                    getData(data);
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }, 500);
 
 
         NavigationView navigationView = findViewById(R.id.navigationView);
@@ -250,7 +114,6 @@ public class ShowsActivity extends AppCompatActivity {
                     case "ABOUT THE DEVELOPER":
                         intent = new Intent(ShowsActivity.this, AboutActivity.class);
                         startActivity(intent);
-                        finish();
                         return true;
 
                 }
@@ -270,30 +133,77 @@ public class ShowsActivity extends AppCompatActivity {
                 if (tab.getText().equals("POPULAR")) {
 
                     progressDialog.show();
-                    DownloadJSON downloadPopularJSON = new DownloadJSON();
-                    downloadPopularJSON.execute("https://api.themoviedb.org/3/tv/popular?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&page=1");
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            try {
+                                DownloadJSON downloadPopularJSON = new DownloadJSON();
+                                String data = downloadPopularJSON.execute("https://api.themoviedb.org/3/tv/popular?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&page=1").get();
+                                getData(data);
+                            }
+                            catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }, 500);
                 }
 
                 else if (tab.getText().equals("ON THE AIR")) {
 
                     progressDialog.show();
-                    DownloadJSON downloadNowPlayingJSON = new DownloadJSON();
-                    downloadNowPlayingJSON.execute("https://api.themoviedb.org/3/tv/on_the_air?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&page=1");
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            try {
+                                DownloadJSON downloadNowPlayingJSON = new DownloadJSON();
+                                String data = downloadNowPlayingJSON.execute("https://api.themoviedb.org/3/tv/on_the_air?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&page=1").get();
+                                getData(data);
+                            }
+                            catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }, 500);
                 }
 
                 else if (tab.getText().equals("AIRING TODAY")) {
 
                     progressDialog.show();
-                    DownloadJSON downloadUpcomingJSON = new DownloadJSON();
-                    downloadUpcomingJSON.execute("https://api.themoviedb.org/3/tv/airing_today?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&page=1");
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            try {
+                                DownloadJSON downloadUpcomingJSON = new DownloadJSON();
+                                String data = downloadUpcomingJSON.execute("https://api.themoviedb.org/3/tv/airing_today?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&page=1").get();
+                                getData(data);
+                            }
+                            catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }, 500);
                 }
 
                 else {
 
                     progressDialog.show();
-                    DownloadJSON downloadTopRatedJSON = new DownloadJSON();
-                    downloadTopRatedJSON.execute("https://api.themoviedb.org/3/tv/top_rated?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&page=1");
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
 
+                            try {
+                                DownloadJSON downloadTopRatedJSON = new DownloadJSON();
+                                String data = downloadTopRatedJSON.execute("https://api.themoviedb.org/3/tv/top_rated?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&page=1").get();
+                                getData(data);
+                            }
+                            catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }, 500);
                 }
             }
 
@@ -330,12 +240,68 @@ public class ShowsActivity extends AppCompatActivity {
                     handler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            DownloadJSON downloadNowPlayingJSON = new DownloadJSON();
-                            downloadNowPlayingJSON.execute("https://api.themoviedb.org/3/search/tv?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&page=1&query=" + query);
+                            try {
+                                DownloadJSON downloadNowPlayingJSON = new DownloadJSON();
+                                String data = downloadNowPlayingJSON.execute("https://api.themoviedb.org/3/search/tv?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&page=1&query=" + query).get();
+                                getData(data);
+                            }
+                            catch (Exception e) {
+                                e.printStackTrace();
+                            }
                         }
                     }, 500);
                 }
             }
         });
     }
+
+
+
+
+
+    protected void getData(String s)
+    {
+        try {
+            JSONObject jsonObject = new JSONObject(s);
+
+            String info = jsonObject.getString("results");
+
+            JSONArray jsonArray = new JSONArray(info);
+
+            moviesArrayList.clear();
+
+            for(int i = 0; i < jsonArray.length(); i++)
+            {
+                JSONObject object = jsonArray.getJSONObject(i);
+                moviesArrayList.add(new Movies(
+                        object.getString("poster_path"),
+                        object.getString("name"),
+                        object.getString("id")
+                ));
+            }
+
+            moviesListView.setAdapter(adapter);
+
+            progressDialog.hide();
+
+            moviesListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                    String ID = moviesArrayList.get(position).getId();
+                    Intent intent = new Intent(ShowsActivity.this, DetailActivity.class);
+                    intent.putExtra("TYPE", "TV");
+                    intent.putExtra("ID", ID);
+                    startActivity(intent);
+
+                }
+            });
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            progressDialog.hide();
+            Snackbar.make(findViewById(R.id.drawerLayout), "UNABLE TO FETCH INFORMATION", BaseTransientBottomBar.LENGTH_SHORT).show();
+        }
+    }
+
 }
