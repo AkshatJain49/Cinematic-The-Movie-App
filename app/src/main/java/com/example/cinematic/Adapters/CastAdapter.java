@@ -11,17 +11,16 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.example.cinematic.Classes.Movies;
+import com.example.cinematic.Classes.Cast;
 import com.example.cinematic.R;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 
-public class MovieAdapter extends ArrayAdapter<Movies>
-{
-    public MovieAdapter(Context context, ArrayList<Movies> moviesArrayList)
-    {
-        super(context, 0, moviesArrayList);
+public class CastAdapter extends ArrayAdapter<Cast> {
+
+    public CastAdapter(Context context, ArrayList<Cast> castArrayList) {
+        super(context, 0, castArrayList);
     }
 
     @NonNull
@@ -33,11 +32,11 @@ public class MovieAdapter extends ArrayAdapter<Movies>
         ImageView imageMovie = view.findViewById(R.id.imageMovie);
         TextView textName = view.findViewById(R.id.textName);
 
-        Movies movie = getItem(position);
+        Cast cast = getItem(position);
 
-        textName.setText(movie.getMovieName());
+        textName.setText(cast.getName());
 
-        String posterURL = "https://image.tmdb.org/t/p/w500/" + movie.getPosterURL();
+        String posterURL = "https://image.tmdb.org/t/p/w500/" + cast.getPosterPath();
 
         //DOWNLOADING IMAGE
         Picasso.get().load(posterURL).error(R.drawable.no_image).into(imageMovie);

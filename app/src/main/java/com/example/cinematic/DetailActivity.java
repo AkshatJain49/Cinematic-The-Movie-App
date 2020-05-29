@@ -6,7 +6,6 @@ import android.os.Bundle;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Handler;
 import android.view.View;
@@ -18,15 +17,17 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.example.cinematic.Adapters.CastAdapter;
 import com.example.cinematic.Adapters.MovieAdapter;
 import com.example.cinematic.Adapters.TrailerAdapter;
-import com.example.cinematic.Async.DownloadImage;
 import com.example.cinematic.Async.DownloadJSON;
+import com.example.cinematic.Classes.Cast;
 import com.example.cinematic.Classes.Movies;
 import com.example.cinematic.Classes.Trailers;
 import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
+import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -36,14 +37,16 @@ import java.util.ArrayList;
 public class DetailActivity extends AppCompatActivity {
 
     ProgressDialog progressDialog;
-    TextView textMovieName, textDate, textRuntime, textRating, textStatus, textOverview, textCast;
+    TextView textMovieName, textDate, textRuntime, textRating, textStatus, textOverview;
     ListView trailerListView;
-    GridView similarGridView;
+    GridView similarGridView, castGridView;
     ImageView imageMovie;
     String ID, Type, castData = "";
     TrailerAdapter adapter;
     MovieAdapter movieAdapter;
+    CastAdapter castAdapter;
     ArrayList<Movies> moviesArrayList;
+    ArrayList<Cast> castArrayList;
     ArrayList<Trailers> trailerArrayList;
     boolean requestCast = true, requestSimilar = true;
 
@@ -68,12 +71,20 @@ public class DetailActivity extends AppCompatActivity {
             fetchURL = "https://api.themoviedb.org/3/tv/"+ ID +"?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US";
 
 
+        // ARRAY LISTS
         moviesArrayList = new ArrayList<>();
+        castArrayList = new ArrayList<>();
+        trailerArrayList = new ArrayList<>();
+
+        // VIEWS
         similarGridView = findViewById(R.id.similarGridView);
         trailerListView = findViewById(R.id.trailerListView);
-        trailerArrayList = new ArrayList<>();
+        castGridView = findViewById(R.id.castGridView);
+
+        // ADAPTERS
         adapter = new TrailerAdapter(DetailActivity.this, trailerArrayList);
         movieAdapter = new MovieAdapter(DetailActivity.this, moviesArrayList);
+        castAdapter = new CastAdapter(DetailActivity.this, castArrayList);
 
         textMovieName = findViewById(R.id.textMovieName);
         textDate = findViewById(R.id.textDate);
@@ -81,7 +92,6 @@ public class DetailActivity extends AppCompatActivity {
         textRating = findViewById(R.id.textRating);
         textStatus = findViewById(R.id.textStatus);
         textOverview = findViewById(R.id.textOverview);
-        textCast = findViewById(R.id.textCast);
         imageMovie = findViewById(R.id.imageMovie);
 
         progressDialog = new ProgressDialog(this);
@@ -109,7 +119,7 @@ public class DetailActivity extends AppCompatActivity {
                 {
                     textOverview.setVisibility(View.VISIBLE);
                     trailerListView.setVisibility(View.GONE);
-                    textCast.setVisibility(View.GONE);
+                    castGridView.setVisibility(View.GONE);
                     similarGridView.setVisibility(View.GONE);
                 }
 
@@ -117,7 +127,7 @@ public class DetailActivity extends AppCompatActivity {
                 {
                     textOverview.setVisibility(View.GONE);
                     trailerListView.setVisibility(View.VISIBLE);
-                    textCast.setVisibility(View.GONE);
+                    castGridView.setVisibility(View.GONE);
                     similarGridView.setVisibility(View.GONE);
                 }
 
@@ -160,7 +170,7 @@ public class DetailActivity extends AppCompatActivity {
                         }, 500);
                     }
 
-                    textCast.setVisibility(View.VISIBLE);
+                    castGridView.setVisibility(View.VISIBLE);
                     similarGridView.setVisibility(View.GONE);
                 }
 
@@ -203,7 +213,7 @@ public class DetailActivity extends AppCompatActivity {
                         }, 500);
                     }
 
-                    textCast.setVisibility(View.GONE);
+                    castGridView.setVisibility(View.GONE);
                     similarGridView.setVisibility(View.VISIBLE);
                 }
             }
@@ -271,14 +281,7 @@ public class DetailActivity extends AppCompatActivity {
                 getTrailerData(data);
             }
 
-            DownloadImage imagePoster = new DownloadImage();
-            try {
-                Bitmap bitmapPoster = imagePoster.execute(posterURL).get();
-                imageMovie.setImageBitmap(bitmapPoster);
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
+            Picasso.get().load(posterURL).error(R.drawable.no_image).into(imageMovie);
 
             int time = Integer.parseInt(runTime);
             int hours = time / 60;
@@ -370,14 +373,23 @@ public class DetailActivity extends AppCompatActivity {
             for(int i = 0; i < jsonArray.length(); i++)
             {
                 JSONObject object = jsonArray.getJSONObject(i);
-                String name = object.getString("name");
-                String character = object.getString("character");
-                castData += "\'" + name +"\'" + " as " + character + "\n";
-
+                castArrayList.add(new Cast(object.getString("profile_path"), object.getString("name"), object.getString("id")));
             }
 
-            textCast.setText(castData);
+            castGridView.setAdapter(castAdapter);
             progressDialog.hide();
+
+            castGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                    String ID = castArrayList.get(position).getId();
+                    Intent intent = new Intent(DetailActivity.this, CastDetailActivity.class);
+                    intent.putExtra("ID", ID);
+                    startActivity(intent);
+
+                }
+            });
 
         }
         catch (Exception e) {

@@ -167,6 +167,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/constraintLayoutInfo"
+                app:tabGravity="center"
                 app:tabIndicatorColor="@android:color/white"
                 app:tabIndicatorGravity="top"
                 app:tabMode="scrollable"
@@ -226,25 +227,23 @@
 
             </ListView>
 
-            <TextView
-                android:id="@+id/textCast"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginEnd="10dp"
+            <GridView
+                android:id="@+id/castGridView"
+                android:layout_width="match_parent"
+                android:layout_height="400dp"
                 android:layout_marginBottom="20dp"
-                android:textColor="@color/colorPrimary"
-                android:textSize="18sp"
+                android:nestedScrollingEnabled="true"
+                android:numColumns="2"
+                android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/tabLayout"></TextView>
+                app:layout_constraintTop_toBottomOf="@+id/tabLayout" />
 
             <GridView
                 android:id="@+id/similarGridView"
                 android:layout_width="match_parent"
-                android:layout_height="500dp"
+                android:layout_height="400dp"
                 android:layout_marginBottom="20dp"
                 android:nestedScrollingEnabled="true"
                 android:numColumns="2"

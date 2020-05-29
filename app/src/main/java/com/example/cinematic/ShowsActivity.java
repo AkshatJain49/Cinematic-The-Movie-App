@@ -9,9 +9,6 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.MenuItem;
@@ -33,12 +30,7 @@ import com.google.android.material.tabs.TabLayout;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
 
 public class ShowsActivity extends AppCompatActivity {
 
@@ -114,6 +106,12 @@ public class ShowsActivity extends AppCompatActivity {
                     case "ABOUT THE DEVELOPER":
                         intent = new Intent(ShowsActivity.this, AboutActivity.class);
                         startActivity(intent);
+                        return true;
+
+                    case "PEOPLE":
+                        intent = new Intent(ShowsActivity.this, CastActivity.class);
+                        startActivity(intent);
+                        finish();
                         return true;
 
                 }

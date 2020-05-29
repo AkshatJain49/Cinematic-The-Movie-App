@@ -108,6 +108,12 @@ public class MainActivity extends AppCompatActivity {
                         startActivity(intent);
                         return true;
 
+                    case "PEOPLE":
+                        intent = new Intent(MainActivity.this, CastActivity.class);
+                        startActivity(intent);
+                        finish();
+                        return true;
+
                 }
                 return false;
             }

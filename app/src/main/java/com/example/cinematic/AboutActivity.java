@@ -58,6 +58,12 @@ public class AboutActivity extends AppCompatActivity {
                         finish();
                         return true;
 
+                    case "PEOPLE":
+                        intent = new Intent(AboutActivity.this, CastActivity.class);
+                        startActivity(intent);
+                        finish();
+                        return true;
+
                 }
                 return false;
             }

@@ -10,6 +10,9 @@
         <item android:title="TV SHOWS"
             android:icon="@drawable/monitor"/>
 
+        <item android:title="PEOPLE"
+            android:icon="@drawable/monitor"/>
+
     </group>
     <group android:id="@+id/group2">
 
