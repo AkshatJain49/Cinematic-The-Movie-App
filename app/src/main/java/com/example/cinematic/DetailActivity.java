@@ -63,7 +63,7 @@ public class DetailActivity extends AppCompatActivity {
         ID = intent.getStringExtra("ID");
         Type = intent.getStringExtra("TYPE");
 
-        String fetchURL;
+        final String fetchURL;
 
         if(Type.equals("MOVIE"))
             fetchURL = "https://api.themoviedb.org/3/movie/" + ID + "?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US";
@@ -98,16 +98,25 @@ public class DetailActivity extends AppCompatActivity {
         progressDialog.setMessage("LOADING");
         progressDialog.show();
 
-        DownloadJSON downloadJSON = new DownloadJSON();
-        try {
-            String data = downloadJSON.execute(fetchURL).get();
-            getData(data);
-            progressDialog.dismiss();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
+
+        // HANDLER IS USED TO MAKE TRANSITION SMOOTH
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+                    DownloadJSON downloadJSON = new DownloadJSON();
+                    String data = downloadJSON.execute(fetchURL).get();
+                    getData(data);
+                    progressDialog.dismiss();
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        }, 500);
 
 
         TabLayout tabLayout = findViewById(R.id.tabLayout);

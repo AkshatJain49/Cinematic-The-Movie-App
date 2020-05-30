@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.widget.ImageView;
@@ -47,16 +48,23 @@ public class CastDetailActivity extends AppCompatActivity {
         progressDialog.setMessage("LOADING");
         progressDialog.show();
 
-        DownloadJSON downloadJSON = new DownloadJSON();
-        try {
-            String data = downloadJSON.execute("https://api.themoviedb.org/3/person/"+ ID +"?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US").get();
-            getData(data);
-            progressDialog.dismiss();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+                    DownloadJSON downloadJSON = new DownloadJSON();
+                    String data = downloadJSON.execute("https://api.themoviedb.org/3/person/"+ ID +"?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US").get();
+                    getData(data);
+                    progressDialog.dismiss();
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        }, 500);
     }
 
 

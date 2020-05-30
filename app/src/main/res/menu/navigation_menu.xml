@@ -11,7 +11,7 @@
             android:icon="@drawable/monitor"/>
 
         <item android:title="PEOPLE"
-            android:icon="@drawable/monitor"/>
+            android:icon="@drawable/star"/>
 
     </group>
     <group android:id="@+id/group2">
