@@ -3,6 +3,7 @@
     package="com.example.cinematic">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -11,7 +12,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".CastDetailActivity"></activity>
+
         <activity android:name=".SplashActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,6 +29,8 @@
         <activity android:name=".DetailActivity" />
         <activity android:name=".CastActivity" />
         <activity android:name=".AboutActivity" />
+        <activity android:name=".SaveImageActivity" />
+        <activity android:name=".CastDetailActivity" />
 
         <meta-data
             android:name="preloaded_fonts"

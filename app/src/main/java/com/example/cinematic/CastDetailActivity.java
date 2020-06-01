@@ -4,10 +4,11 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.method.ScrollingMovementMethod;
-import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -24,6 +25,7 @@ public class CastDetailActivity extends AppCompatActivity {
     TextView textBirthDate, textBiography, textName, textPlace, textPopularity;
     ImageView imageCast;
     String ID;
+    boolean imageLoad = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,12 +74,11 @@ public class CastDetailActivity extends AppCompatActivity {
 
     protected void getData(String s)
     {
-        String castName, dob, biography, place, popularity;
+        final String castName, dob, biography, place, popularity;
         try {
-
             JSONObject jsonObject = new JSONObject(s);
 
-            String posterURL = "https://image.tmdb.org/t/p/w500/" + jsonObject.getString("profile_path");
+            final String posterURL = "https://image.tmdb.org/t/p/w500/" + jsonObject.getString("profile_path");
 
             castName = jsonObject.getString("name");
             biography = jsonObject.getString("biography");
@@ -85,13 +86,40 @@ public class CastDetailActivity extends AppCompatActivity {
             place = jsonObject.getString("place_of_birth");
             popularity = jsonObject.getString("popularity");
 
-            Picasso.get().load(posterURL).error(R.drawable.no_image).into(imageCast);
+            Picasso.Builder picassoBuilder = new Picasso.Builder(this);
+            picassoBuilder.listener(new Picasso.Listener() {
+                @Override
+                public void onImageLoadFailed(Picasso picasso, Uri uri, Exception exception) {
+                    imageLoad = false;
+                }
+            });
+
+            Picasso picasso = picassoBuilder.build();
+            picasso.setLoggingEnabled(true);
+            picasso.setLoggingEnabled(true);
+            picasso.load(posterURL).error(R.drawable.no_image).into(imageCast);
 
             textName.setText(castName);
             textBirthDate.setText(dob);
             textBiography.setText(biography);
             textPlace.setText(place);
             textPopularity.setText(popularity);
+
+
+            // STARTS ACTIVITY ONLY IF IMAGE IS LOADED
+            imageCast.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    if (imageLoad) {
+                        Intent intent = new Intent(CastDetailActivity.this, SaveImageActivity.class);
+                        intent.putExtra("URL", posterURL);
+                        intent.putExtra("NAME", castName);
+                        startActivity(intent);
+                    }
+
+                }
+            });
 
         }
         catch (Exception e) {

@@ -49,6 +49,7 @@ public class DetailActivity extends AppCompatActivity {
     ArrayList<Cast> castArrayList;
     ArrayList<Trailers> trailerArrayList;
     boolean requestCast = true, requestSimilar = true;
+    boolean imageLoad = true;
 
 
 
@@ -258,11 +259,13 @@ public class DetailActivity extends AppCompatActivity {
 
     protected void getData(String s)
     {
-        String name, releaseDate, runTime, userRating, releaseStatus, overview;
+        final String name;
+        String releaseDate, runTime, userRating, releaseStatus, overview;
+
         try {
 
             JSONObject jsonObject = new JSONObject(s);
-            String posterURL = "https://image.tmdb.org/t/p/w500/" + jsonObject.getString("poster_path");
+            final String posterURL = "https://image.tmdb.org/t/p/w500/" + jsonObject.getString("poster_path");
             DownloadJSON downloadTrailer = new DownloadJSON();
 
             if(Type.equals("MOVIE"))
@@ -290,13 +293,27 @@ public class DetailActivity extends AppCompatActivity {
                 getTrailerData(data);
             }
 
-            Picasso.get().load(posterURL).error(R.drawable.no_image).into(imageMovie);
+            Picasso.Builder picassoBuilder = new Picasso.Builder(this);
+            picassoBuilder.listener(new Picasso.Listener() {
+                @Override
+                public void onImageLoadFailed(Picasso picasso, Uri uri, Exception exception) {
+                    imageLoad = false;
+                }
+            });
+
+            Picasso picasso = picassoBuilder.build();
+            picasso.setLoggingEnabled(true);
+            picasso.setLoggingEnabled(true);
+            picasso.load(posterURL).error(R.drawable.no_image).into(imageMovie);
+            //Picasso.get().load(posterURL).error(R.drawable.no_image).into(imageMovie);
 
             int time = Integer.parseInt(runTime);
             int hours = time / 60;
             int min = time % 60;
+
             if (hours == 0)
                 runTime = min + " min";
+
             else if(hours !=0)
                 runTime = hours + " hours " + min + " minutes";
 
@@ -306,6 +323,22 @@ public class DetailActivity extends AppCompatActivity {
             textRating.setText(userRating);
             textStatus.setText(releaseStatus);
             textOverview.setText(overview);
+
+
+            imageMovie.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    // STARTS ACTIVITY ONLY IF IMAGE IS LOADED
+                    if (imageLoad) {
+                        Intent intent = new Intent(DetailActivity.this, SaveImageActivity.class);
+                        intent.putExtra("URL", posterURL);
+                        intent.putExtra("NAME", name);
+                        startActivity(intent);
+                    }
+
+                }
+            });
 
         }
         catch (Exception e) {
