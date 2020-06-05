@@ -42,6 +42,7 @@ public class ShowsActivity extends AppCompatActivity {
     ArrayList<Movies> moviesArrayList;
     MovieAdapter adapter;
     GridView moviesListView;
+    EditText inputName;
 
 
 
@@ -127,6 +128,8 @@ public class ShowsActivity extends AppCompatActivity {
         tabCategories.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
+
+                inputName.setText("");
 
                 if (tab.getText().equals("POPULAR")) {
 
@@ -217,8 +220,8 @@ public class ShowsActivity extends AppCompatActivity {
         });
 
 
-        final EditText inputName = findViewById(R.id.inputName);
-        inputName.setHint("ENTER TV SHOW TITLE");
+        inputName = findViewById(R.id.inputName);
+        inputName.setHint("Enter TV Show Title");
         Button btnSearch = findViewById(R.id.btnSearch);
         btnSearch.setOnClickListener(new View.OnClickListener() {
             @Override

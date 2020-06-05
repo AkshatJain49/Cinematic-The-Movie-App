@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<Movies> moviesArrayList;
     MovieAdapter adapter;
     GridView moviesListView;
+    EditText inputName;
 
 
 
@@ -125,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
 
+                inputName.setText("");
 
                 if (tab.getText().equals("POPULAR")) {
 
@@ -211,7 +213,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        final EditText inputName = findViewById(R.id.inputName);
+        inputName = findViewById(R.id.inputName);
         Button btnSearch = findViewById(R.id.btnSearch);
         btnSearch.setOnClickListener(new View.OnClickListener() {
             @Override
