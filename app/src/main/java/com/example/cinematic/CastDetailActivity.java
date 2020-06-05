@@ -225,8 +225,6 @@ public class CastDetailActivity extends AppCompatActivity {
 
             moviesGridView.setAdapter(movieAdapter);
 
-            progressDialog.hide();
-
             moviesGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -274,8 +272,6 @@ public class CastDetailActivity extends AppCompatActivity {
             }
 
             showsGridView.setAdapter(showsAdapter);
-
-            progressDialog.hide();
 
             showsGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
