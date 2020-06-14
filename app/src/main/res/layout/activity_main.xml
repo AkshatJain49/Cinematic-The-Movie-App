@@ -41,7 +41,7 @@
                 android:id="@+id/cardView"
                 android:layout_width="290dp"
                 android:layout_height="35dp"
-                android:layout_marginStart="30dp"
+                android:layout_marginStart="15dp"
                 android:layout_marginBottom="15dp"
                 android:longClickable="true"
                 app:cardBackgroundColor="@android:color/white"
@@ -72,12 +72,21 @@
             </androidx.cardview.widget.CardView>
 
             <Button
+                android:id="@+id/btnVoice"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:layout_marginStart="5dp"
+                android:background="@drawable/microphone"
+                app:layout_constraintStart_toEndOf="@+id/cardView"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
                 android:id="@+id/btnSearch"
                 android:layout_width="35dp"
                 android:layout_height="35dp"
                 android:layout_marginStart="15dp"
                 android:background="@drawable/search"
-                app:layout_constraintStart_toEndOf="@+id/cardView"
+                app:layout_constraintStart_toEndOf="@+id/btnVoice"
                 app:layout_constraintTop_toTopOf="parent" />
 
 

@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -22,6 +24,7 @@ import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.tabs.TabLayout;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
@@ -31,9 +34,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
+    TextToSpeech textToSpeech;
     DrawerLayout drawerLayout;
     Toolbar toolbar;
     ActionBarDrawerToggle actionBarDrawerToggle;
@@ -228,25 +233,54 @@ public class MainActivity extends AppCompatActivity {
                     Snackbar.make(findViewById(R.id.drawerLayout), "ENTER MOVIE/SHOW NAME!", BaseTransientBottomBar.LENGTH_SHORT).show();
 
                 else {
-                    progressDialog.show();
-                    Handler handler = new Handler();
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-
-                            try {
-                                DownloadJSON downloadNowPlayingJSON = new DownloadJSON();
-                                String data = downloadNowPlayingJSON.execute("https://api.themoviedb.org/3/search/movie?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&query=" + query +"&page=1").get();
-                                getData(data);
-                            }
-                            catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }, 500);
+                    getSearchData(query);
                 }
             }
         });
+
+
+        Button btnVoice = findViewById(R.id.btnVoice);
+        btnVoice.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+
+                try{
+                    startActivityForResult(intent, 101);
+                }
+                catch(Exception e) {
+                    Snackbar.make(drawerLayout, "SPEECH INPUT NOT SUPPORTED", BaseTransientBottomBar.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+
+        textToSpeech = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int i) {
+                if (i == TextToSpeech.SUCCESS) {
+                    textToSpeech.setLanguage(Locale.getDefault());
+                }
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == 101) {
+            if (resultCode == RESULT_OK && data != null) {
+                ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                final String query = result.get(0);
+                inputName.setText(query);
+                textToSpeech.speak("Searching" + query, TextToSpeech.QUEUE_FLUSH, null);
+
+                getSearchData(query);
+            }
+        }
     }
 
 
@@ -297,4 +331,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+
+
+
+    protected void getSearchData(final String query)
+    {
+        progressDialog.show();
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    DownloadJSON downloadSearchJSON = new DownloadJSON();
+                    String data = downloadSearchJSON.execute("https://api.themoviedb.org/3/search/movie?api_key=83b2f8791807db4f499f4633fca4af79&language=en-US&query=" + query +"&page=1").get();
+                    getData(data);
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }, 500);
+    }
 }
